@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "skills": {
+    "ios-ux-design": {
+      "source": "mosif16/codex-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ios-ux-design/SKILL.md",
+      "computedHash": "d02704ecac81673b5e1661aae733f6e4f7c79b73513aaefcb5d6de33fbdb16f5"
+    },
+    "mobile-ios-design": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/ui-design/skills/mobile-ios-design/SKILL.md",
+      "computedHash": "3902f919488d8ddc983e157bbcd5f16b739b84eeaab57002bf52b7f9601ed6ad"
+    },
+    "permissionkit": {
+      "source": "dpearson2699/swift-ios-skills",
+      "sourceType": "github",
+      "skillPath": "skills/permissionkit/SKILL.md",
+      "computedHash": "ed224a0510af823a0d0d46f3af21ed457c31f692cd97e77026dfa0979bf40202"
+    },
+    "push-notifications": {
+      "source": "dpearson2699/swift-ios-skills",
+      "sourceType": "github",
+      "skillPath": "skills/push-notifications/SKILL.md",
+      "computedHash": "987ac1744c0dd450ed0d1253e4db592138afe9898f0bd69cb47ec6bf7fb3c152"
+    },
+    "speech-recognition": {
+      "source": "dpearson2699/swift-ios-skills",
+      "sourceType": "github",
+      "skillPath": "skills/speech-recognition/SKILL.md",
+      "computedHash": "f748880343b74930d24f327a107149e963470bcc6575a49f0834a028405f8cda"
+    },
+    "swiftdata": {
+      "source": "dpearson2699/swift-ios-skills",
+      "sourceType": "github",
+      "skillPath": "skills/swiftdata/SKILL.md",
+      "computedHash": "6c38bd598edcab8d4774f66044e37b4fb5f96137679f629d00d8efda1a2c5598"
+    },
+    "swiftui-animation": {
+      "source": "dpearson2699/swift-ios-skills",
+      "sourceType": "github",
+      "skillPath": "skills/swiftui-animation/SKILL.md",
+      "computedHash": "447ad41e2f5cd49e3a3c590628601154f95c7896f31a54c7cb33a4f64f952aeb"
+    },
+    "swiftui-gestures": {
+      "source": "dpearson2699/swift-ios-skills",
+      "sourceType": "github",
+      "skillPath": "skills/swiftui-gestures/SKILL.md",
+      "computedHash": "0f17ca7f38b7cefbc280f522aaf18a6603a72ff8dfb62f5dc12be39b288a54a3"
+    },
+    "swiftui-patterns": {
+      "source": "dpearson2699/swift-ios-skills",
+      "sourceType": "github",
+      "skillPath": "skills/swiftui-patterns/SKILL.md",
+      "computedHash": "a93e68f6ace1a1fece49780575f9852f01975ae0d019b284a5466a417446ab98"
+    }
+  }
+}
