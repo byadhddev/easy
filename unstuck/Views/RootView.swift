@@ -2,12 +2,16 @@ import SwiftUI
 import SwiftData
 
 // MARK: - Root View
-// Decides: show onboarding (first launch) or home screen.
-// Manages the app-level navigation state machine.
+// App-level state machine. The flow is:
+//   onboarding → home
+//   home → checkIn → quest (pending) → sendOff (accepted) → home
+//   home → reflection (if accepted quest exists on open) → completion → home
+//   home → quest (reactivated from set_aside) → sendOff → home
 
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
+    @Query(sort: \Quest.createdAt, order: .reverse) private var quests: [Quest]
 
     @State private var appState: AppState = .loading
 
@@ -17,10 +21,17 @@ struct RootView: View {
         case home
         case checkIn
         case quest(Quest)
-        case completion(Quest)
+        case sendOff(Quest)
+        case reflection(Quest)
+        case completion(Quest, String)   // (quest, headline)
     }
 
     private var profile: UserProfile? { profiles.first }
+
+    // Quest that's been accepted but not yet reflected on
+    private var pendingReflection: Quest? {
+        quests.first { $0.status == .accepted }
+    }
 
     var body: some View {
         ZStack {
@@ -28,7 +39,6 @@ struct RootView: View {
 
             switch appState {
             case .loading:
-                // Splash — wordmark fades in
                 SplashView()
                     .onAppear { resolveInitialState() }
 
@@ -44,12 +54,30 @@ struct RootView: View {
                     HomeView(
                         profile: profile,
                         onCheckIn: {
-                            withAnimation(AppAnimation.fadeIn) { appState = .checkIn }
+                            // If there's already an accepted quest, ask for reflection first
+                            if let quest = pendingReflection {
+                                withAnimation(AppAnimation.fadeIn) { appState = .reflection(quest) }
+                            } else {
+                                withAnimation(AppAnimation.fadeIn) { appState = .checkIn }
+                            }
                         },
                         onOpenQuest: { quest in
                             withAnimation(AppAnimation.fadeIn) { appState = .quest(quest) }
+                        },
+                        onReactivate: { quest in
+                            quest.status = .pending
+                            try? modelContext.save()
+                            withAnimation(AppAnimation.fadeIn) { appState = .quest(quest) }
                         }
                     )
+                    .onAppear {
+                        // When home appears, surface reflection if quest is waiting
+                        if let quest = pendingReflection {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                                withAnimation(AppAnimation.fadeIn) { appState = .reflection(quest) }
+                            }
+                        }
+                    }
                 }
 
             case .checkIn:
@@ -74,26 +102,74 @@ struct RootView: View {
                 }
 
             case .quest(let quest):
-                QuestView(
-                    quest: quest,
-                    onComplete: {
-                        withAnimation(AppAnimation.fadeIn) { appState = .completion(quest) }
-                    },
-                    onSkip: {
-                        quest.status = .skipped
+                if let profile {
+                    QuestView(
+                        quest: quest,
+                        onAccept: {
+                            quest.status = .accepted
+                            quest.acceptedAt = Date()
+                            try? modelContext.save()
+                            withAnimation(AppAnimation.fadeIn) { appState = .sendOff(quest) }
+                        },
+                        onSetAside: {
+                            quest.status = .set_aside
+                            try? modelContext.save()
+                            withAnimation(AppAnimation.fadeIn) { appState = .home }
+                        }
+                    )
+                    .environment(\.profileName, profile.name)
+                }
+
+            case .sendOff(let quest):
+                if let profile {
+                    SendOffView(
+                        quest: quest,
+                        profileName: profile.name,
+                        onDismiss: {
+                            withAnimation(AppAnimation.fadeIn) { appState = .home }
+                        }
+                    )
+                }
+
+            case .reflection(let quest):
+                ReflectionView(quest: quest) { outcome in
+                    switch outcome {
+                    case .didIt:
+                        quest.status = .completed
+                        quest.completedAt = Date()
+                        try? modelContext.save()
+                        withAnimation(AppAnimation.fadeIn) {
+                            appState = .completion(quest, AppCopy.Completion.headline)
+                        }
+
+                    case .tried:
+                        quest.status = .completed
+                        quest.completedAt = Date()
+                        try? modelContext.save()
+                        withAnimation(AppAnimation.fadeIn) {
+                            appState = .completion(quest, AppCopy.Completion.triedHeadline)
+                        }
+
+                    case .notYet:
+                        // Keep as accepted — still being held
+                        withAnimation(AppAnimation.fadeIn) { appState = .home }
+
+                    case .setAside:
+                        quest.status = .set_aside
                         try? modelContext.save()
                         withAnimation(AppAnimation.fadeIn) { appState = .home }
                     }
-                )
+                }
 
-            case .completion(let quest):
+            case .completion(let quest, let headline):
                 CompletionView(
                     quest: quest,
+                    headline: headline,
                     onDone: { reflection in
-                        quest.status = .completed
-                        quest.completedAt = Date()
-                        quest.reflection = reflection
-                        try? modelContext.save()
+                        if let text = reflection, !text.isEmpty {
+                            quest.reflection = text
+                            try? modelContext.save()
+                        }
                         withAnimation(AppAnimation.fadeIn) { appState = .home }
                     }
                 )
@@ -120,8 +196,23 @@ extension RootView.AppState {
         case .home:           return "home"
         case .checkIn:        return "checkIn"
         case .quest:          return "quest"
+        case .sendOff:        return "sendOff"
+        case .reflection:     return "reflection"
         case .completion:     return "completion"
         }
+    }
+}
+
+// MARK: - Profile Name Environment Key
+// Used to pass profile name into QuestView without prop drilling.
+
+private struct ProfileNameKey: EnvironmentKey {
+    static let defaultValue: String = ""
+}
+extension EnvironmentValues {
+    var profileName: String {
+        get { self[ProfileNameKey.self] }
+        set { self[ProfileNameKey.self] = newValue }
     }
 }
 
@@ -142,3 +233,4 @@ struct SplashView: View {
         }
     }
 }
+

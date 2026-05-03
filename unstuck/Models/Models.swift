@@ -33,9 +33,10 @@ final class Quest {
     var actionStep: String
     var status: QuestStatus
     var reflection: String?
-    var userInput: String        // What the user told the app
+    var userInput: String
     var category: QuestCategory
     var createdAt: Date
+    var acceptedAt: Date?
     var completedAt: Date?
 
     init(
@@ -51,7 +52,7 @@ final class Quest {
         self.actionStep = actionStep
         self.userInput = userInput
         self.category = category
-        self.status = .active
+        self.status = .pending
         self.createdAt = Date()
     }
 }
@@ -106,10 +107,25 @@ enum QuestCategory: String, Codable, CaseIterable {
         case .unclear:      return "🌀"
         }
     }
+
+    var color: String {
+        switch self {
+        case .health:       return "sage"
+        case .conversation: return "rose"
+        case .work:         return "amber"
+        case .home:         return "amberDim"
+        case .unclear:      return "dim"
+        }
+    }
 }
 
 enum QuestStatus: String, Codable {
-    case active    = "active"
-    case skipped   = "skipped"
-    case completed = "completed"
+    /// Quest has been generated and shown — user hasn't decided yet
+    case pending    = "pending"
+    /// User said "keep this with me" — sent off, clock is running
+    case accepted   = "accepted"
+    /// User confirmed they did it (after reflection)
+    case completed  = "completed"
+    /// User said "not now" — always retrievable
+    case set_aside  = "set_aside"
 }

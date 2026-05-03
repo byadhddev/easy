@@ -58,7 +58,7 @@ struct QuestCardPreview: View {
                     .frame(width: 3)
 
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(AppCopy.Home.activeQuestLabel)
+                    Text(AppCopy.Home.acceptedQuestLabel)
                         .font(.appCaption)
                         .foregroundStyle(Color.appTextDim)
 

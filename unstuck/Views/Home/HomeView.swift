@@ -10,12 +10,25 @@ struct HomeView: View {
     var profile: UserProfile
     var onCheckIn: () -> Void
     var onOpenQuest: (Quest) -> Void
+    var onReactivate: (Quest) -> Void
 
     @State private var appeared = false
-    @State private var showHistory = false
+    @State private var showJourney = false
 
-    private var activeQuest: Quest? {
-        quests.first { $0.status == .active }
+    private var acceptedQuest: Quest? {
+        quests.first { $0.status == .accepted }
+    }
+
+    private var pendingQuest: Quest? {
+        quests.first { $0.status == .pending }
+    }
+
+    private var setAsideCount: Int {
+        quests.filter { $0.status == .set_aside }.count
+    }
+
+    private var hasJourneyContent: Bool {
+        quests.contains { $0.status == .completed || $0.status == .set_aside }
     }
 
     private var greeting: String {
@@ -28,7 +41,6 @@ struct HomeView: View {
             Color.appBackground.ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 0) {
-                // Greeting
                 Text(greeting)
                     .font(.appTitle)
                     .foregroundStyle(Color.appTextPrimary)
@@ -39,31 +51,43 @@ struct HomeView: View {
 
                 Spacer()
 
-                // Primary check-in button
                 VStack(spacing: AppSpacing.md) {
-                    Button {
-                        Haptic.softTouch()
-                        onCheckIn()
-                    } label: {
-                        HStack(spacing: AppSpacing.md) {
-                            Image(systemName: "mic.fill")
-                                .font(.system(size: 20))
-                                .foregroundStyle(Color.appBackground)
-                            Text(AppCopy.Home.primaryCTA)
-                                .font(.appCTA)
-                                .foregroundStyle(Color.appBackground)
+                    // Primary CTA — only show if no accepted quest in flight
+                    if acceptedQuest == nil {
+                        Button {
+                            Haptic.softTouch()
+                            onCheckIn()
+                        } label: {
+                            HStack(spacing: AppSpacing.md) {
+                                Image(systemName: "mic.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(Color.appBackground)
+                                Text(AppCopy.Home.primaryCTA)
+                                    .font(.appCTA)
+                                    .foregroundStyle(Color.appBackground)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, AppSpacing.md + 2)
+                            .background(Color.appAmber)
+                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.pill))
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.md + 2)
-                        .background(Color.appAmber)
-                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.pill))
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .fadeUp(appear: appeared, delay: 0.15)
                     }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .fadeUp(appear: appeared, delay: 0.15)
 
-                    // Active quest preview
-                    if let quest = activeQuest {
+                    // Accepted quest card — "being held for you"
+                    if let quest = acceptedQuest {
+                        AcceptedQuestCard(quest: quest) {
+                            onOpenQuest(quest)
+                        }
+                        .padding(.horizontal, AppSpacing.lg)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .fadeUp(appear: appeared, delay: 0.15)
+                    }
+
+                    // Pending quest card (not yet accepted)
+                    if acceptedQuest == nil, let quest = pendingQuest {
                         QuestCardPreview(quest: quest) {
                             onOpenQuest(quest)
                         }
@@ -75,157 +99,101 @@ struct HomeView: View {
 
                 Spacer().frame(height: AppSpacing.xl)
 
-                // History link
-                if quests.contains(where: { $0.status == .completed }) {
-                    Button {
-                        showHistory = true
-                    } label: {
-                        HStack(spacing: AppSpacing.sm) {
-                            Image(systemName: "clock")
-                                .font(.system(size: 13, weight: .medium))
-                            Text(AppCopy.Home.historyLink)
-                                .font(.appLabel)
+                // Bottom links
+                VStack(spacing: AppSpacing.md) {
+                    if setAsideCount > 0 {
+                        Button {
+                            showJourney = true
+                        } label: {
+                            HStack(spacing: AppSpacing.sm) {
+                                Image(systemName: "tray")
+                                    .font(.system(size: 13, weight: .medium))
+                                Text("\(setAsideCount) \(AppCopy.Home.setAsideLabel)")
+                                    .font(.appLabel)
+                            }
+                            .foregroundStyle(Color.appTextDim)
                         }
-                        .foregroundStyle(Color.appTextDim)
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .fadeUp(appear: appeared, delay: 0.25)
                     }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.bottom, AppSpacing.xxxl)
-                    .fadeUp(appear: appeared, delay: 0.3)
+
+                    if hasJourneyContent {
+                        Button {
+                            showJourney = true
+                        } label: {
+                            HStack(spacing: AppSpacing.sm) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 13, weight: .medium))
+                                Text(AppCopy.Home.historyLink)
+                                    .font(.appLabel)
+                            }
+                            .foregroundStyle(Color.appTextDim)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .padding(.bottom, AppSpacing.xxxl)
+                        .fadeUp(appear: appeared, delay: 0.3)
+                    }
                 }
             }
         }
         .onAppear { withAnimation { appeared = true } }
         .dynamicTypeSize(.small ... .accessibility2)
-        .sheet(isPresented: $showHistory) {
-            HistoryView()
+        .sheet(isPresented: $showJourney) {
+            JourneyView(onReactivate: onReactivate)
         }
     }
 }
 
-// MARK: - History View
+// MARK: - Accepted Quest Card
+// Shown when user has accepted a step and been sent off.
+// Warm, held — not a task card.
 
-struct HistoryView: View {
-    @Environment(\.dismiss) private var dismiss
-    // Fetch all quests sorted by creation date; filter to completed in computed property
-    // (avoids SwiftData #Predicate limitations with Codable enums)
-    @Query(sort: \Quest.createdAt, order: .reverse) private var allQuests: [Quest]
-
-    private var completedQuests: [Quest] {
-        allQuests.filter { $0.status == .completed }
-    }
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.appBackground.ignoresSafeArea()
-
-                Group {
-                    if completedQuests.isEmpty {
-                        Text(AppCopy.History.empty)
-                            .font(.appBody)
-                            .foregroundStyle(Color.appTextDim)
-                            .multilineTextAlignment(.center)
-                            .padding(AppSpacing.xl)
-                    } else {
-                        ScrollView {
-                            LazyVStack(alignment: .leading, spacing: 0) {
-                                ForEach(groupedQuests, id: \.0) { section, quests in
-                                    sectionHeader(section)
-                                    ForEach(quests) { quest in
-                                        QuestHistoryRow(quest: quest)
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, AppSpacing.lg)
-                        }
-                    }
-                }
-            }
-            .navigationTitle(AppCopy.History.title)
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(Color.appBackground, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(AppCopy.Shared.done) { dismiss() }
-                        .font(.appCTA)
-                        .foregroundStyle(Color.appAmber)
-                }
-            }
-        }
-        .preferredColorScheme(.dark)
-    }
-
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.appCaption)
-            .foregroundStyle(Color.appTextDim)
-            .padding(.top, AppSpacing.xl)
-            .padding(.bottom, AppSpacing.sm)
-    }
-
-    private var groupedQuests: [(String, [Quest])] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-
-        var sections: [String: [Quest]] = [:]
-        for quest in completedQuests {
-            let date = quest.completedAt ?? quest.createdAt
-            let day = calendar.startOfDay(for: date)
-            let label: String
-            if day == today {
-                label = AppCopy.History.sectionToday
-            } else if day == yesterday {
-                label = AppCopy.History.sectionYesterday
-            } else {
-                label = date.formatted(date: .abbreviated, time: .omitted)
-            }
-            sections[label, default: []].append(quest)
-        }
-
-        // Sort sections newest first
-        return sections
-            .sorted { lhs, rhs in
-                let lDate = lhs.value.compactMap(\.completedAt).max() ?? lhs.value.first?.createdAt ?? .distantPast
-                let rDate = rhs.value.compactMap(\.completedAt).max() ?? rhs.value.first?.createdAt ?? .distantPast
-                return lDate > rDate
-            }
-    }
-}
-
-private struct QuestHistoryRow: View {
+private struct AcceptedQuestCard: View {
     let quest: Quest
+    let onTap: () -> Void
+
+    @State private var pulse = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: AppSpacing.md) {
-            // Timeline dot
-            VStack {
+        Button(action: onTap) {
+            HStack(spacing: AppSpacing.md) {
+                // Soft pulsing amber dot
                 Circle()
-                    .fill(Color.appSage)
+                    .fill(Color.appAmber)
                     .frame(width: 8, height: 8)
-                    .padding(.top, 6)
-                Rectangle()
-                    .fill(Color.appDivider)
-                    .frame(width: 1)
-            }
-            .frame(width: 8)
+                    .scaleEffect(pulse ? 1.3 : 1.0)
+                    .opacity(pulse ? 0.7 : 1.0)
+                    .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: pulse)
 
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(quest.actionStep)
-                    .font(.appBody)
-                    .foregroundStyle(Color.appTextPrimary)
-                    .lineLimit(3)
-
-                if let reflection = quest.reflection, !reflection.isEmpty {
-                    Text(reflection)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(AppCopy.Home.acceptedQuestLabel)
                         .font(.appCaption)
-                        .foregroundStyle(Color.appTextDim)
-                        .italic()
-                        .lineLimit(2)
+                        .foregroundStyle(Color.appAmber.opacity(0.8))
+
+                    Text(quest.stepTitle)
+                        .font(.appLabel)
+                        .foregroundStyle(Color.appTextSecondary)
+                        .lineLimit(1)
                 }
+
+                Spacer()
+
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.appTextDim)
             }
-            .padding(.bottom, AppSpacing.lg)
+            .padding(AppSpacing.md)
+            .background(Color.appSurface)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .strokeBorder(Color.appAmber.opacity(0.2), lineWidth: 1)
+            )
         }
+        .buttonStyle(.plain)
+        .onAppear { pulse = true }
     }
 }
+

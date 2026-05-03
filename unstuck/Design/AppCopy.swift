@@ -57,46 +57,78 @@ enum AppCopy {
             }
         }
 
-        static let primaryCTA       = "Tell me what's going on"
-        static let activeQuestLabel = "You have something waiting"
-        static let historyLink      = "Things you've faced"
-        static let noQuestYet       = "Nothing to carry yet.\nThat's okay."
+        static let primaryCTA         = "What's been sitting with you?"
+        static let acceptedQuestLabel = "You have a step waiting for you"
+        static let setAsideLabel      = "things you set aside"
+        static let historyLink        = "Your journey"
+        static let noQuestYet         = "Nothing to carry yet.\nThat's okay."
     }
 
     // MARK: - Check-in (Input)
     enum CheckIn {
         static let voicePrompt      = "Just say it. Whatever it is."
         static let textPlaceholder  = "What's been on your mind..."
-        static let processingLabel  = "Thinking about what you need..."
+        static let processingLabel  = "Sitting with what you said..."
         static let switchToText     = "Type instead"
         static let switchToVoice    = "Speak instead"
     }
 
     // MARK: - Quest Screen
+    // No "quest" label shown to user. Comfort is the center; action is secondary.
     enum Quest {
-        static let label            = "your quest"
-        static let primaryCTA       = "I'll try this"
-        static let notReadyCTA      = "Not ready yet"
-        static let dismissMessage   = "Okay. It'll be here when you're ready."
-        static let timerSuggestion  = "Want 5 minutes to do this?"
-        static let timerStart       = "Start 5-minute timer"
+        static let comfortLabel     = "what I'm hearing"
+        static let stepLabel        = "one small step"
+        static let primaryCTA       = "Keep this with me"
+        static let setAsideCTA      = "Set this aside for now"
+        static let setAsideNote     = "It'll be here whenever you're ready."
+    }
+
+    // MARK: - Send-off (after accepting)
+    enum SendOff {
+        static func headline(name: String) -> String { "Go at your own pace, \(name)." }
+        static let body             = "I'm holding this with you.\nNo timer. No pressure."
+        static let note             = "Come back and tell me how it went — whenever that is."
+        static let cta              = "I'm going"
+    }
+
+    // MARK: - Reflection (asked on return when quest is accepted)
+    enum Reflection {
+        static let prompt           = "How did that step go?"
+        static let optionDid        = "I did it"
+        static let optionTried      = "I tried"
+        static let optionNotYet     = "Not yet — still holding it"
+        static let optionSetAside   = "Set this aside for now"
+        static let didSubtext       = "Even if it was messier than expected."
+        static let triedSubtext     = "That counts. Trying is not nothing."
+        static let notYetSubtext    = "No rush. It'll stay with you."
+        static let setAsideSubtext  = "It'll be here when you're ready."
     }
 
     // MARK: - Completion
     enum Completion {
-        static let headline         = "You did it."
+        static let headline         = "You moved something."
+        static let triedHeadline    = "You showed up."
         static let subheadline      = "That wasn't nothing."
         static let reflectionPrompt = "If you want — what did that feel like?"
         static let reflectionSkip   = "That's okay. You don't have to explain it."
         static let doneButton       = "Done for now"
     }
 
-    // MARK: - History
-    enum History {
-        static let title            = "Things you've faced."
-        static let empty            = "Nothing here yet — and that's okay."
-        static let sectionToday     = "Today"
-        static let sectionYesterday = "Yesterday"
+    // MARK: - Journey
+    enum Journey {
+        static let title            = "Your journey"
+        static let momentumNone     = "Every journey starts somewhere."
+        static func momentum(count: Int, focus: String) -> String {
+            count == 1
+                ? "You've taken 1 step. \(focus) was the first."
+                : "You've taken \(count) steps. \(focus) has been your focus."
+        }
+        static let categoryHeader   = "Where your energy has gone"
+        static let setAsideHeader   = "Things you set aside"
+        static let setAsideEmpty    = "Nothing set aside right now."
+        static let reactivateCTA    = "I'm ready for this now"
+        static let empty            = "Nothing here yet.\nThe journey starts with one step."
+        static let timelineHeader   = "Steps you've taken"
     }
 
     // MARK: - Generic / Shared
