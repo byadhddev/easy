@@ -1,10 +1,13 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 
-// MARK: - Environment bindings (set via `wrangler secret put`)
+// MARK: - Environment bindings
+// GEMINI_API_KEY is the only secret — set via `wrangler secret put GEMINI_API_KEY`
+// RATE_LIMIT_KV is an optional KV namespace for IP-based rate limiting.
+// No client secret needed — the backend IS the trust boundary.
 type Bindings = {
   GEMINI_API_KEY: string
-  APP_SECRET: string
+  RATE_LIMIT_KV?: KVNamespace   // optional: bind in wrangler.toml to enable rate limiting
 }
 
 // MARK: - Request / Response types
@@ -25,9 +28,9 @@ interface QuestResponse {
 const app = new Hono<{ Bindings: Bindings }>()
 
 app.use('*', cors({
-  origin: '*', // Lock down to your app's bundle ID via App Attest in v2
+  origin: '*', // Tighten with App Attest in v2
   allowMethods: ['POST', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'X-App-Secret'],
+  allowHeaders: ['Content-Type'],
 }))
 
 // Health check
@@ -35,10 +38,17 @@ app.get('/', (c) => c.json({ status: 'ok', service: 'unstuck-backend' }))
 
 // MARK: - Quest generation endpoint
 app.post('/api/quest', async (c) => {
-  // Validate shared secret
-  const secret = c.req.header('X-App-Secret')
-  if (!secret || secret !== c.env.APP_SECRET) {
-    return c.json({ error: 'Unauthorized' }, 401)
+  // IP-based rate limiting (requires RATE_LIMIT_KV namespace to be bound)
+  if (c.env.RATE_LIMIT_KV) {
+    const ip = c.req.header('CF-Connecting-IP') ?? 'unknown'
+    const key = `rl:${ip}:${Math.floor(Date.now() / 60_000)}` // per-minute bucket
+    const count = parseInt(await c.env.RATE_LIMIT_KV.get(key) ?? '0', 10)
+    if (count >= 10) {
+      return c.json({ error: 'Too many requests. Please wait a moment.' }, 429)
+    }
+    c.executionCtx.waitUntil(
+      c.env.RATE_LIMIT_KV.put(key, String(count + 1), { expirationTtl: 120 })
+    )
   }
 
   // Parse and validate body

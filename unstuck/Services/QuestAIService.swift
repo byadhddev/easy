@@ -24,7 +24,6 @@ struct QuestAIService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json",  forHTTPHeaderField: "Content-Type")
-        request.setValue(AppSecrets.appSecret, forHTTPHeaderField: "X-App-Secret")
         request.httpBody = try JSONEncoder().encode(body)
         request.timeoutInterval = 15
 
@@ -37,8 +36,8 @@ struct QuestAIService {
         switch httpResponse.statusCode {
         case 200:
             return try JSONDecoder().decode(QuestResponse.self, from: data)
-        case 401:
-            throw QuestError.unauthorized
+        case 429:
+            throw QuestError.rateLimited
         default:
             throw QuestError.apiError
         }
@@ -58,14 +57,14 @@ struct QuestResponse: Equatable, Decodable {
 enum QuestError: LocalizedError {
     case notConfigured
     case networkError
-    case unauthorized
+    case rateLimited
     case apiError
 
     var errorDescription: String? {
         switch self {
         case .notConfigured: return "Backend not configured. Add Secrets.swift to the project."
         case .networkError:  return AppCopy.Shared.errorGeneric
-        case .unauthorized:  return "App secret mismatch. Check Secrets.swift."
+        case .rateLimited:   return "Too many requests. Give it a moment."
         case .apiError:      return AppCopy.Shared.errorGeneric
         }
     }

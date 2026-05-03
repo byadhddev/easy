@@ -3,7 +3,15 @@ main = "src/index.ts"
 compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Environment variables are set via `wrangler secret put` — never in this file.
-# Required secrets:
+# Required secret (set via `wrangler secret put GEMINI_API_KEY`):
 #   GEMINI_API_KEY  — your Google AI Studio key
-#   APP_SECRET      — shared secret the iOS app sends in X-App-Secret header
+#
+# No client-side secret needed — the Worker is the trust boundary.
+#
+# Optional: enable IP rate limiting by creating a KV namespace and binding it:
+#   1. wrangler kv namespace create RATE_LIMIT_KV
+#   2. Uncomment the block below and fill in the id from step 1
+#
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id      = "REPLACE_WITH_KV_NAMESPACE_ID"
