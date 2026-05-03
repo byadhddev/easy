@@ -32,11 +32,14 @@ enum AppCopy {
         }
 
         // Step 3 — Energy
-        static let energyPrompt     = "How much do you have in\nthe tank right now?"
+        static let energyPrompt     = "How full is your tank\nright now?"
         enum Energy {
-            static let low          = "Running on fumes"
-            static let medium       = "Getting by"
-            static let okay         = "Okay enough"
+            static let lowTitle     = "Running on fumes"
+            static let lowDesc      = "Exhausted. Even small things feel heavy."
+            static let mediumTitle  = "Getting by"
+            static let mediumDesc   = "Functioning, but carrying weight."
+            static let okayTitle    = "Okay enough"
+            static let okayDesc     = "You have something to work with today."
         }
 
         static let continueButton   = "Continue"

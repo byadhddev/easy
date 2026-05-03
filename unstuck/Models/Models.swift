@@ -65,9 +65,9 @@ enum EnergyLevel: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .low:    return AppCopy.Onboarding.Energy.low
-        case .medium: return AppCopy.Onboarding.Energy.medium
-        case .okay:   return AppCopy.Onboarding.Energy.okay
+        case .low:    return AppCopy.Onboarding.Energy.lowTitle
+        case .medium: return AppCopy.Onboarding.Energy.mediumTitle
+        case .okay:   return AppCopy.Onboarding.Energy.okayTitle
         }
     }
 

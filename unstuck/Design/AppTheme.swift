@@ -115,3 +115,68 @@ extension View {
         modifier(FadeUpModifier(appear: appear, delay: delay))
     }
 }
+
+// MARK: - Animated Gradient Background
+// Slow radial amber pulse that underlies the entire onboarding flow.
+// Gives visual warmth without competing with content.
+
+struct AnimatedGradientBackground: View {
+    @State private var animate = false
+
+    var body: some View {
+        ZStack {
+            Color.appBackground
+
+            // Slow warm radial pulse from center
+            RadialGradient(
+                colors: [
+                    Color.appAmber.opacity(animate ? 0.18 : 0.08),
+                    Color.appBackground.opacity(0)
+                ],
+                center: .center,
+                startRadius: 0,
+                endRadius: animate ? 480 : 320
+            )
+            .scaleEffect(animate ? 1.1 : 0.95)
+            .animation(
+                .easeInOut(duration: 4.5).repeatForever(autoreverses: true),
+                value: animate
+            )
+
+            // Secondary top glow
+            RadialGradient(
+                colors: [
+                    Color.appAmber.opacity(animate ? 0.10 : 0.04),
+                    Color.clear
+                ],
+                center: UnitPoint(x: 0.5, y: 0.15),
+                startRadius: 0,
+                endRadius: 250
+            )
+            .animation(
+                .easeInOut(duration: 6).repeatForever(autoreverses: true),
+                value: animate
+            )
+        }
+        .ignoresSafeArea()
+        .onAppear { animate = true }
+    }
+}
+
+// MARK: - Onboarding Step Progress Dots
+
+struct OnboardingProgressDots: View {
+    let total: Int
+    let current: Int   // 0-indexed
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(0..<total, id: \.self) { i in
+                Capsule()
+                    .fill(i <= current ? Color.appAmber : Color.appDivider)
+                    .frame(width: i == current ? 20 : 6, height: 6)
+                    .animation(AppAnimation.spring, value: current)
+            }
+        }
+    }
+}
