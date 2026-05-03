@@ -2,28 +2,17 @@ import Foundation
 
 // MARK: - Quest AI Service
 // Calls the Unstuck backend (Cloudflare Worker) which proxies to Gemini.
-// NO API keys are stored on the client. Only APP_SECRET is used — a low-sensitivity
-// shared secret that prevents public abuse of the endpoint.
+// NO API keys are stored on the client.
 //
-// Set in Secrets.xcconfig (never committed):
-//   BACKEND_URL = https://unstuck-backend.<your-subdomain>.workers.dev
-//   APP_SECRET  = <your shared secret>
+// Secrets live in Secrets.swift (gitignored — copy from Secrets.swift.template).
+// Never reads from Info.plist or xcconfig — just a plain Swift enum.
 
 struct QuestAIService {
-
-    // Read from Info.plist, populated via Secrets.xcconfig
-    private var backendURL: String {
-        Bundle.main.object(forInfoDictionaryKey: "BACKEND_URL") as? String ?? ""
-    }
-
-    private var appSecret: String {
-        Bundle.main.object(forInfoDictionaryKey: "APP_SECRET") as? String ?? ""
-    }
 
     // MARK: - Generate Quest
 
     func generateQuest(userInput: String, energy: EnergyLevel) async throws -> QuestResponse {
-        guard !backendURL.isEmpty, let url = URL(string: "\(backendURL)/api/quest") else {
+        guard let url = URL(string: "\(AppSecrets.backendURL)/api/quest") else {
             throw QuestError.notConfigured
         }
 
@@ -35,7 +24,7 @@ struct QuestAIService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json",  forHTTPHeaderField: "Content-Type")
-        request.setValue(appSecret,           forHTTPHeaderField: "X-App-Secret")
+        request.setValue(AppSecrets.appSecret, forHTTPHeaderField: "X-App-Secret")
         request.httpBody = try JSONEncoder().encode(body)
         request.timeoutInterval = 15
 
@@ -74,12 +63,13 @@ enum QuestError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notConfigured: return "Backend URL not configured. Check Secrets.xcconfig."
+        case .notConfigured: return "Backend not configured. Add Secrets.swift to the project."
         case .networkError:  return AppCopy.Shared.errorGeneric
-        case .unauthorized:  return "App secret mismatch. Check Secrets.xcconfig."
+        case .unauthorized:  return "App secret mismatch. Check Secrets.swift."
         case .apiError:      return AppCopy.Shared.errorGeneric
         }
     }
 }
+
 
 

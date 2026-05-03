@@ -38,3 +38,4 @@ Podfile.lock
 build/
 o
 backend/node_modules/
+unstuck/Secrets.swift
