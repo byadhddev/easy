@@ -1,0 +1,9 @@
+name = "unstuck-backend"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables are set via `wrangler secret put` — never in this file.
+# Required secrets:
+#   GEMINI_API_KEY  — your Google AI Studio key
+#   APP_SECRET      — shared secret the iOS app sends in X-App-Secret header
