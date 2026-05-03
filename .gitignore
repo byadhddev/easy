@@ -37,3 +37,4 @@ Podfile.lock
 # Simulator build artifacts
 build/
 o
+backend/node_modules/
