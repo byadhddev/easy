@@ -74,13 +74,7 @@
             ReferencedContainer = "container:unstuck.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "GEMINI_API_KEY"
-            value = "[REMOVED_GEMINI_API_KEY]"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
+      <!-- Environment variables intentionally removed from shared scheme. -->
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
