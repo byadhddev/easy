@@ -404,7 +404,6 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				GEMINI_API_KEY = [REMOVED_GEMINI_API_KEY];
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Unstuck uses your microphone so you can speak what’s on your mind instead of typing it.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Unstuck uses speech recognition to turn your voice into text for your check-in.";
@@ -460,7 +459,6 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
-				GEMINI_API_KEY = [REMOVED_GEMINI_API_KEY];
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Unstuck uses your microphone so you can speak what’s on your mind instead of typing it.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Unstuck uses speech recognition to turn your voice into text for your check-in.";
